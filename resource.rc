@@ -1,0 +1,106 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG1 DIALOGEX 0, 0, 430, 258
+STYLE WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | 
+    WS_THICKFRAME
+EXSTYLE WS_EX_ACCEPTFILES
+CAPTION "INI COMPARE"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON      "OPEN LEFT",IDC_OPEN_LEFT,5,0,50,14
+    PUSHBUTTON      "SAVE LEFT",IDC_SAVE_LEFT,63,0,50,14
+    PUSHBUTTON      "TO RIGHT ->",IDC_TO_RIGHT,121,0,50,14
+    PUSHBUTTON      "<- TO LEFT",IDC_TO_LEFT,179,0,50,14
+    PUSHBUTTON      "SAVE RIGHT",IDC_SAVE_RIGHT,237,0,50,14
+    PUSHBUTTON      "OPEN RIGHT",IDC_OPEN_RIGHT,295,0,50,14
+    CONTROL         "case sense data",IDC_CASE_SENSE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,353,0,72,10
+    PUSHBUTTON      "IDC_LVIEW_LEFT",IDC_LVIEW_LEFT,37,81,109,61
+    PUSHBUTTON      "IDC_LVIEW_RIGHT",IDC_LVIEW_RIGHT,163,82,106,60
+    PUSHBUTTON      "CMD_CASE_TOGGLE",CMD_CASE_TOGGLE,313,25,95,14,NOT 
+                    WS_VISIBLE
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        RIGHTMARGIN, 426
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
