@@ -250,6 +250,15 @@ int create_menu(HWND *hmenu)
 	}
 	return h!=0;
 }
+int load_icon(HWND hwnd)
+{
+	HICON hIcon = LoadIcon(ghinstance,MAKEINTRESOURCE(IDI_ICON1));
+    if(hIcon){
+		SendMessage(hwnd,WM_SETICON,ICON_SMALL,(LPARAM)hIcon);
+		SendMessage(hwnd,WM_SETICON,ICON_BIG,(LPARAM)hIcon);
+	}
+	return 0;
+}
 LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	static int center=0;
@@ -282,6 +291,7 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			create_menu(&hmenu);
 			register_drag_drop(hwnd);
 			restore_window_pos(hwnd);
+			load_icon(hwnd);
 		}
 		break;
 	case WM_SIZE:
