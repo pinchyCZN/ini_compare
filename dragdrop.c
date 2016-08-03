@@ -4,11 +4,15 @@
 
 static 	IDropTarget droptarget;
 static HWND ghwnd=0;
-static HWND hwndTT=0;
+static HWND ghdrop_ttip=0;
 
-int create_tooltip(HWND hwnd,char *tt_text,int x, int y)
+int create_tooltip(HWND hwnd,HWND *htt_out,char *tt_text,int x, int y)
 {
-	if((hwndTT==0) && (tt_text[0]!=0)){
+	int result=FALSE;
+	if(htt_out==0)
+		return result;
+	if(tt_text[0]!=0){
+		HWND hwndTT;
 		hwndTT=CreateWindowEx(WS_EX_TOPMOST,
 			TOOLTIPS_CLASS,NULL,
 			WS_POPUP|TTS_NOPREFIX|TTS_ALWAYSTIP,        
@@ -27,11 +31,13 @@ int create_tooltip(HWND hwnd,char *tt_text,int x, int y)
 			SendMessage(hwndTT,TTM_SETMAXTIPWIDTH,0,640); //makes multiline tooltips
 			SendMessage(hwndTT,TTM_TRACKPOSITION,0,MAKELONG(x,y)); 
 			SendMessage(hwndTT,TTM_TRACKACTIVATE,TRUE,&ti);
+			*htt_out=hwndTT;
+			result=TRUE;
 		}
 	}
-	return hwndTT;
+	return result;
 }
-int update_tooltip_text(char *tt_text)
+int update_tooltip_text(HWND hwndTT,char *tt_text)
 {
 	int result=0;
 	if(hwndTT!=0){
@@ -45,13 +51,18 @@ int update_tooltip_text(char *tt_text)
 	}
 	return result;
 }
-int destroy_tooltip()
+int destroy_tooltip(HWND *hwndTT)
 {
-	if(hwndTT!=0){
-		DestroyWindow(hwndTT);
-		hwndTT=0;
+	int result=0;
+	HWND htmp;
+	if(hwndTT==0)
+		return result;
+	htmp=*hwndTT;
+	if(htmp!=0){
+		result=DestroyWindow(htmp);
+		*hwndTT=0;
 	}
-	return hwndTT;
+	return result;
 }
 int get_correct_msg(char *msg,int len,int left)
 {
@@ -122,7 +133,7 @@ static HRESULT STDMETHODCALLTYPE idroptarget_dragenter(IDropTarget* This, IDataO
 		left=is_left(pt);
 		get_correct_msg(msg,sizeof(msg),left);
 		GetWindowRect(ghwnd,&rect);
-		create_tooltip(ghwnd,msg,rect.left,rect.top);
+		create_tooltip(ghwnd,&ghdrop_ttip,msg,rect.left,rect.top);
 	}
 	return S_OK;
 }
@@ -134,14 +145,14 @@ static HRESULT STDMETHODCALLTYPE idroptarget_dragover(IDropTarget* This, DWORD g
 	int left;
 	left=is_left(pt);
 	get_correct_msg(msg,sizeof(msg),left);
-	update_tooltip_text(msg);
+	update_tooltip_text(ghdrop_ttip,msg);
 	return S_OK;
 }
 
 //	IDropTarget::DragLeave
 static HRESULT STDMETHODCALLTYPE idroptarget_dragleave(IDropTarget* This)
 {
-	destroy_tooltip();
+	destroy_tooltip(&ghdrop_ttip);
 	return S_OK;
 }
 
@@ -158,7 +169,7 @@ static HRESULT STDMETHODCALLTYPE idroptarget_drop(IDropTarget* This, IDataObject
 				GetKeyState(VK_SHIFT)&0x8000,left);
 
 	}
-	destroy_tooltip();
+	destroy_tooltip(&ghdrop_ttip);
 	return S_OK;
 }
 static IDropTargetVtbl idt_vtbl={

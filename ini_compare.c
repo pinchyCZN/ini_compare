@@ -11,8 +11,11 @@
 HINSTANCE ghinstance=0;
 int top_ypos=0;
 HWND ghlvleft=0,ghlvright=0,ghwnd=0;
+static HWND ghttip=0;
 char fname_left[MAX_PATH]={0};
 char fname_right[MAX_PATH]={0};
+int timer_event=0;
+#define TIMER_ID 1337
 
 int update_left_fname(const char *s)
 {
@@ -114,6 +117,17 @@ int resize_lview(HWND hwnd,int idc_left,int idc_right,int center)
 	h=rect.bottom-top_ypos;
 	SetWindowPos(hright,HWND_TOP,x,y,w,h,SWP_NOZORDER);
 }
+int center_split(HWND hwnd,int center)
+{
+	RECT rect={0};
+	HWND hbutton;
+	GetClientRect(hwnd,&rect);
+	hbutton=GetDlgItem(hwnd,IDC_SPLIT);
+	if(hbutton==0)
+		return 0;
+	SetWindowPos(hbutton,NULL,center,0,20,rect.bottom-rect.top,SWP_NOZORDER);
+	return 0;
+}
 int move_buttons(HWND hwnd,int center)
 {
 	RECT rect={0};
@@ -131,6 +145,7 @@ int move_buttons(HWND hwnd,int center)
 		{IDC_OPEN_RIGHT,2},
 		{IDC_CASE_SENSE,3}
 	};
+	center_split(hwnd,center);
 	GetWindowRect(GetDlgItem(hwnd,IDC_OPEN_LEFT),&rect);
 	MapWindowPoints(NULL,hwnd,&rect,2);
 	y=rect.top;
@@ -144,6 +159,7 @@ int move_buttons(HWND hwnd,int center)
 	}
 	return 0;
 }
+
 int get_center(HWND hwnd)
 {
 	RECT rect={0};
@@ -224,8 +240,8 @@ int save_data(HWND hlview,char *fname)
 			if(key[0]!=0){
 				char data[256]={0};
 				ListView_GetItemText(hlview,i,2,data,sizeof(data));
-				WritePrivateProfileString(sect,key,data,fname);
-				result++;
+				if(WritePrivateProfileString(sect,key,data,fname))
+					result++;
 			}
 		}
 	}
@@ -259,12 +275,32 @@ int load_icon(HWND hwnd)
 	}
 	return 0;
 }
+int show_ttip(HWND hwnd,int ctrl,HWND *httip,char *text)
+{
+	int result=FALSE;
+	HWND hctrl;
+	hctrl=GetDlgItem(hwnd,ctrl);
+	if(hctrl!=0){
+		RECT rect={0};
+		int x,y;
+		GetWindowRect(hctrl,&rect);
+		x=(rect.right+rect.left)/2;
+		y=rect.top;
+		result=create_tooltip(hwnd,httip,text,x,y);
+		if(result)
+			if(timer_event==0)
+				timer_event=SetTimer(hwnd,TIMER_ID,750,NULL);
+	}
+	return result;
+}
 LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	static int center=0;
 	static HMENU hmenu=0;
+#ifdef _DEBUG
 //	if(msg==WM_CONTEXTMENU)
 //	print_msg(msg,lparam,wparam,(int)hwnd);
+#endif
 	switch(msg){
 	case WM_INITDIALOG:
 		{
@@ -294,6 +330,38 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			load_icon(hwnd);
 		}
 		break;
+	case WM_TIMER:
+		if(timer_event!=0){
+			if(KillTimer(hwnd,timer_event))
+				timer_event=0;
+		}
+		destroy_tooltip(&ghttip);
+		break;
+	case WM_NOTIFY:
+		{
+			NMHDR *pnmh=lparam;
+			if(pnmh!=0){
+				switch(pnmh->idFrom){
+				case IDC_LVIEW_LEFT:
+				case IDC_LVIEW_RIGHT:
+					if(pnmh->code==LVN_KEYDOWN){
+						LV_KEYDOWN *pnkd=lparam;
+						int key;
+						key=pnkd->wVKey;
+						if(0x8000&GetKeyState(VK_CONTROL)){
+							int idc;
+							if('S'==key){
+								idc=pnmh->idFrom==IDC_LVIEW_LEFT?IDC_SAVE_LEFT:IDC_SAVE_RIGHT;
+								SendMessage(hwnd,WM_COMMAND,MAKEWPARAM(idc,0),0);
+							}
+						}
+					}
+				break;
+				}
+			}
+
+		}
+		break;
 	case WM_SIZE:
 		center=get_center(hwnd);
 		resize_lview(hwnd,IDC_LVIEW_LEFT,IDC_LVIEW_RIGHT,center);
@@ -319,12 +387,19 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			move_console(rect.right,rect.top);
 		}
 		break;
+	case WM_PAINT:
+		break;
 	case WM_DRAWITEM:
 		{
 			DRAWITEMSTRUCT *di=lparam;
-			if(di!=0 && di->CtlType==ODT_LISTVIEW){
-				draw_item(di);
-				return TRUE;
+			if(di!=0){
+				if(di->CtlType==ODT_LISTVIEW){
+					draw_item(di);
+					return TRUE;
+				}else if(di->CtlID==IDC_SPLIT){
+					draw_split(di);
+					return TRUE;
+				}
 			}
 		}
 		break;
@@ -374,10 +449,12 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			move_data(ghlvleft,ghlvright);
 			break;
 		case IDC_SAVE_LEFT:
-			save_data(ghlvleft,fname_left);
+			if(save_data(ghlvleft,fname_left))
+				show_ttip(hwnd,IDC_LVIEW_LEFT,&ghttip,"SAVED LEFT");
 			break;
 		case IDC_SAVE_RIGHT:
-			save_data(ghlvright,fname_right);
+			if(save_data(ghlvright,fname_right))
+				show_ttip(hwnd,IDC_LVIEW_RIGHT,&ghttip,"SAVED RIGHT");
 			break;
 		}
 		break;
@@ -405,7 +482,9 @@ int APIENTRY WinMain(HINSTANCE hinstance,
 	InitCommonControlsEx(&ctrls);
 	OleInitialize(0);
 	init_ini_file();
-//	open_console();
+#ifdef _DEBUG
+	open_console();
+#endif
 	DialogBoxParam(hinstance,MAKEINTRESOURCE(IDD_DIALOG1),NULL,main_win_proc,0);
 	return 0;
 }
