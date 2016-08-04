@@ -186,14 +186,16 @@ int set_window_title(const char *f1,const char *f2)
 	tmp[sizeof(tmp)-1]=0;
 	return SetWindowText(ghwnd,tmp);
 }
-int open_file(char *fout,int flen)
+int open_file(char *fout,int flen,int left)
 {
+	char tmp[40]={0};
 	OPENFILENAME ofn={0};
 	ofn.lStructSize=sizeof(ofn);
 	ofn.lpstrFilter=TEXT("*.INI\0*.INI\0*.*\0*.*\0\0");
 	ofn.lpstrFile=fout;
 	ofn.nMaxFile=flen;
-	ofn.lpstrTitle=TEXT("OPEN INI FILE");
+	_snprintf(tmp,sizeof(tmp),"OPEN %s INI FILE",left?"LEFT":"RIGHT");
+	ofn.lpstrTitle=tmp;
 	ofn.Flags=OFN_ENABLESIZING;
 	return GetOpenFileName(&ofn);
 }
@@ -252,14 +254,14 @@ int create_menu(HWND *hmenu)
 	HMENU h;
 	h=CreatePopupMenu();
 	if(h!=0){
-		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,IDC_TO_LEFT,"COPY LEFT <--");
 		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,IDC_TO_RIGHT,"COPY RIGHT -->");
+		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,IDC_TO_LEFT,"COPY LEFT <--");
 		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_SEPARATOR,0,0);
-		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,IDC_OPEN_LEFT,"OPEN LEFT");
 		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,IDC_OPEN_RIGHT,"OPEN RIGHT");
+		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,IDC_OPEN_LEFT,"OPEN LEFT");
 		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_SEPARATOR,0,0);
-		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,IDC_SAVE_LEFT,"SAVE LEFT");
 		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,IDC_SAVE_RIGHT,"SAVE RIGHT");
+		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,IDC_SAVE_LEFT,"SAVE LEFT");
 		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_SEPARATOR,0,0);
 		InsertMenu(h,0xFFFFFFFF,MF_BYPOSITION|MF_STRING,CMD_CASE_TOGGLE,"data case sensitive");
 		*hmenu=h;
@@ -353,6 +355,9 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 							if('S'==key){
 								idc=pnmh->idFrom==IDC_LVIEW_LEFT?IDC_SAVE_LEFT:IDC_SAVE_RIGHT;
 								SendMessage(hwnd,WM_COMMAND,MAKEWPARAM(idc,0),0);
+							}else if('O'==key){
+								idc=pnmh->idFrom==IDC_LVIEW_LEFT?IDC_OPEN_LEFT:IDC_OPEN_RIGHT;
+								SendMessage(hwnd,WM_COMMAND,MAKEWPARAM(idc,0),0);
 							}
 						}
 					}
@@ -435,11 +440,11 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			populate_listview(ghlvleft,ghlvright,fname_left,fname_right,IsDlgButtonChecked(hwnd,IDC_CASE_SENSE));
 			break;
 		case IDC_OPEN_LEFT:
-			if(open_file(fname_left,sizeof(fname_left)))
+			if(open_file(fname_left,sizeof(fname_left),TRUE))
 				populate_listview(ghlvleft,ghlvright,fname_left,fname_right,IsDlgButtonChecked(hwnd,IDC_CASE_SENSE));
 			break;
 		case IDC_OPEN_RIGHT:
-			if(open_file(fname_right,sizeof(fname_right)))
+			if(open_file(fname_right,sizeof(fname_right),FALSE))
 				populate_listview(ghlvleft,ghlvright,fname_left,fname_right,IsDlgButtonChecked(hwnd,IDC_CASE_SENSE));
 			break;
 		case IDC_TO_LEFT:
