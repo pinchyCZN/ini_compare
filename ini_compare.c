@@ -288,10 +288,13 @@ int show_ttip(HWND hwnd,int ctrl,HWND *httip,char *text)
 		GetWindowRect(hctrl,&rect);
 		x=(rect.right+rect.left)/2;
 		y=rect.top;
+		destroy_tooltip(httip);
 		result=create_tooltip(hwnd,httip,text,x,y);
-		if(result)
-			if(timer_event==0)
-				timer_event=SetTimer(hwnd,TIMER_ID,750,NULL);
+		if(result){
+			if(timer_event!=0)
+				KillTimer(hwnd,timer_event);
+			timer_event=SetTimer(hwnd,TIMER_ID,750,NULL);
+		}
 	}
 	return result;
 }
