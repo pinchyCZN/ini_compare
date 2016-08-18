@@ -190,14 +190,14 @@ int register_drag_drop(HWND hwnd)
 
 int process_drop(HWND hwnd,HANDLE hdrop,int ctrl,int shift,int left)
 {
-	int i,count;
-	int have_file=FALSE;
+	int i,count,dropped;
 	char str[MAX_PATH];
 	count=DragQueryFile(hdrop,-1,NULL,0);
 	if(ctrl && shift==FALSE)
 		left=TRUE;
 	else if(shift && ctrl==FALSE)
 		left=FALSE;
+	dropped=0;
 	for(i=0;i<count;i++){
 		str[0]=0;
 		DragQueryFile(hdrop,i,str,sizeof(str));
@@ -206,8 +206,10 @@ int process_drop(HWND hwnd,HANDLE hdrop,int ctrl,int shift,int left)
 				update_left_fname(str);
 			else
 				update_right_fname(str);
-			have_file=TRUE;
-			break;
+			left=!left;
+			dropped++;
+			if(dropped>=2)
+				break;
 		}
 	}
 	DragFinish(hdrop);
