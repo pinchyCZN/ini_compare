@@ -149,7 +149,8 @@ int move_buttons(HWND hwnd,int center)
 		{IDC_TO_LEFT,0},
 		{IDC_SAVE_RIGHT,1},
 		{IDC_OPEN_RIGHT,2},
-		{IDC_CASE_SENSE,3}
+		{IDC_CASE_SENSE,3},
+		{IDC_SHOW_SPLIT,4}
 	};
 	center_split(hwnd,center);
 	GetWindowRect(GetDlgItem(hwnd,IDC_OPEN_LEFT),&rect);
@@ -160,6 +161,8 @@ int move_buttons(HWND hwnd,int center)
 		HWND h=GetDlgItem(hwnd,offsets[i].idc);
 		int x=center;
 		x+=offsets[i].pos*(width+10);
+		if(IDC_SHOW_SPLIT==offsets[i].idc)
+			x+=40;
 		SetWindowPos(h,NULL,x,y,0,0,SWP_NOSIZE|SWP_NOZORDER);
 		InvalidateRect(h,0,FALSE);
 	}
@@ -308,7 +311,7 @@ int show_ttip(HWND hwnd,int ctrl,HWND *httip,char *text)
 }
 LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	static int center=0;
+	static int center=0,show_split=1;
 	static HMENU hmenu=0;
 #ifdef _DEBUG
 //	if(msg==WM_CONTEXTMENU)
@@ -341,6 +344,7 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			register_drag_drop(hwnd);
 			restore_window_pos(hwnd);
 			load_icon(hwnd);
+			CheckDlgButton(hwnd,IDC_SHOW_SPLIT,show_split?BST_CHECKED:BST_UNCHECKED);
 		}
 		break;
 	case WM_TIMER:
@@ -413,7 +417,8 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					draw_item(di);
 					return TRUE;
 				}else if(di->CtlID==IDC_SPLIT){
-					draw_split(di,hwnd);
+					if(show_split)
+						draw_split(di,hwnd);
 					return TRUE;
 				}
 			}
@@ -471,6 +476,13 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 		case IDC_SAVE_RIGHT:
 			if(save_data(ghlvright,fname_right))
 				show_ttip(hwnd,IDC_LVIEW_RIGHT,&ghttip,"SAVED RIGHT");
+			break;
+		case IDC_SHOW_SPLIT:
+			{
+				int chk=IsDlgButtonChecked(hwnd,IDC_SHOW_SPLIT);
+				show_split=chk==BST_CHECKED?1:0;
+				invalidate_split();
+			}
 			break;
 		}
 		break;
