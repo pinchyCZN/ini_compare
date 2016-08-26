@@ -16,6 +16,7 @@ char fname_left[MAX_PATH]={0};
 char fname_right[MAX_PATH]={0};
 int timer_event=0;
 #define TIMER_ID 1337
+#define LVIEW_GAP 8
 
 int update_left_fname(const char *s)
 {
@@ -94,8 +95,7 @@ int setup_window(HWND hwnd,HINSTANCE hinst)
 			hinst,
 			NULL);
 		if(hlview!=0)
-			ListView_SetExtendedListViewStyle(hlview,LVS_EX_GRIDLINES|LVS_EX_FULLROWSELECT,
-				LVS_EX_GRIDLINES|LVS_EX_FULLROWSELECT);
+			ListView_SetExtendedListViewStyle(hlview,LVS_EX_GRIDLINES|LVS_EX_FULLROWSELECT);
 	}
 	return 0;
 }
@@ -109,23 +109,29 @@ int resize_lview(HWND hwnd,int idc_left,int idc_right,int center)
 	hright=GetDlgItem(hwnd,idc_right);
 	h=rect.bottom-top_ypos;
 	SetWindowPos(hleft,HWND_TOP,0,0,center,h,SWP_NOMOVE|SWP_NOZORDER);
-	x=center+8;
+	x=center+LVIEW_GAP;
 	y=top_ypos;
-	w=rect.right-center-8;
+	w=rect.right-center-LVIEW_GAP;
 	if(w<=10)
 		w=10;
 	h=rect.bottom-top_ypos;
 	SetWindowPos(hright,HWND_TOP,x,y,w,h,SWP_NOZORDER);
+	return 0;
 }
 int center_split(HWND hwnd,int center)
 {
 	RECT rect={0};
 	HWND hbutton;
+	int x,y,w,h;
 	GetClientRect(hwnd,&rect);
 	hbutton=GetDlgItem(hwnd,IDC_SPLIT);
 	if(hbutton==0)
 		return 0;
-	SetWindowPos(hbutton,NULL,center,0,20,rect.bottom-rect.top,SWP_NOZORDER);
+	x=center;
+	y=top_ypos+GetSystemMetrics(SM_CYVSCROLL);
+	w=LVIEW_GAP;
+	h=rect.bottom-y;
+	SetWindowPos(hbutton,NULL,x,y,w,h,SWP_NOZORDER);
 	return 0;
 }
 int move_buttons(HWND hwnd,int center)
@@ -226,6 +232,8 @@ int move_data(HWND hsrc,HWND hdest)
 			}
 		}
 	}
+	invalidate_split();
+	return 0;
 }
 int save_data(HWND hlview,char *fname)
 {
@@ -405,7 +413,7 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					draw_item(di);
 					return TRUE;
 				}else if(di->CtlID==IDC_SPLIT){
-					draw_split(di);
+					draw_split(di,hwnd);
 					return TRUE;
 				}
 			}
@@ -482,7 +490,6 @@ int APIENTRY WinMain(HINSTANCE hinstance,
                      LPSTR     cmd_line,
                      int       cmd_show)
 {
-	MSG msg;
     INITCOMMONCONTROLSEX ctrls={0};
 	ghinstance=hinstance;
 	ctrls.dwSize=sizeof(ctrls);

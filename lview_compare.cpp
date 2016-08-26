@@ -17,6 +17,7 @@ int lv_insert_data(HWND hlistview,int row,int col,const char *str);
 int get_str_width(HWND hwnd,const char *str);
 int lv_get_col_text(HWND hlistview,int index,char *str,int size);
 int set_window_title(const char *f1,const char *f2);
+int invalidate_split();
 }
 
 bool compare_nocase(const string &a,const string &b)
@@ -431,5 +432,6 @@ int populate_listview(HWND hleft,HWND hright,char *fleft,char *fright,int case_s
 		ListView_SetColumnWidth(hright,i,widths[1][i]+7);
 	}
 	set_window_title(ini_left.fname.c_str(),ini_right.fname.c_str());
+	invalidate_split();
 	return result;
 }
