@@ -12,11 +12,13 @@
 using namespace std;
 
 extern "C" {
+extern int left_dirty;
+extern int right_dirty;
 int populate_listview(HWND hleft,HWND hright,char *fleft,char *fright,int);
 int lv_insert_data(HWND hlistview,int row,int col,const char *str);
 int get_str_width(HWND hwnd,const char *str);
 int lv_get_col_text(HWND hlistview,int index,char *str,int size);
-int set_window_title(const char *f1,const char *f2);
+int set_window_title(const char *f1,int changed1,const char *f2,int changed2);
 int invalidate_split();
 }
 
@@ -431,7 +433,8 @@ int populate_listview(HWND hleft,HWND hright,char *fleft,char *fright,int case_s
 		ListView_SetColumnWidth(hleft,i,widths[0][i]+7);
 		ListView_SetColumnWidth(hright,i,widths[1][i]+7);
 	}
-	set_window_title(ini_left.fname.c_str(),ini_right.fname.c_str());
+	right_dirty=left_dirty=FALSE;
+	set_window_title(ini_left.fname.c_str(),left_dirty,ini_right.fname.c_str(),right_dirty);
 	invalidate_split();
 	return result;
 }

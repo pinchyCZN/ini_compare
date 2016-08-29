@@ -14,6 +14,8 @@ HWND ghlvleft=0,ghlvright=0,ghwnd=0;
 static HWND ghttip=0;
 char fname_left[MAX_PATH]={0};
 char fname_right[MAX_PATH]={0};
+int left_dirty=FALSE;
+int right_dirty=FALSE;
 int timer_event=0;
 #define TIMER_ID 1337
 #define LVIEW_GAP 8
@@ -175,7 +177,7 @@ int get_center(HWND hwnd)
 	GetClientRect(hwnd,&rect);
 	return (rect.right-rect.left)/2;
 }
-int set_window_title(const char *f1,const char *f2)
+int set_window_title(const char *f1,int changed1,const char *f2,int changed2)
 {
 #define MAX_NAME_LEN 60
 	char tmp[256]={0};
@@ -189,9 +191,9 @@ int set_window_title(const char *f1,const char *f2)
 		p1=f1+l1-MAX_NAME_LEN;
 	if(l2>MAX_NAME_LEN)
 		p2=f2+l2-MAX_NAME_LEN;
-	_snprintf(tmp,sizeof(tmp),"%s%s <-> %s%s",
-		l1>MAX_NAME_LEN?"...":"",p1,
-		l2>MAX_NAME_LEN?"...":"",p2);
+	_snprintf(tmp,sizeof(tmp),"%s%s%s <-> %s%s%s",
+		l1>MAX_NAME_LEN?"...":"",p1,changed1?"*":"",
+		l2>MAX_NAME_LEN?"...":"",p2,changed2?"*":"");
 	tmp[sizeof(tmp)-1]=0;
 	return SetWindowText(ghwnd,tmp);
 }
@@ -465,17 +467,27 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			break;
 		case IDC_TO_LEFT:
 			move_data(ghlvright,ghlvleft);
+			left_dirty=TRUE;
+			set_window_title(fname_left,left_dirty,fname_right,right_dirty);
 			break;
 		case IDC_TO_RIGHT:
 			move_data(ghlvleft,ghlvright);
+			right_dirty=TRUE;
+			set_window_title(fname_left,left_dirty,fname_right,right_dirty);
 			break;
 		case IDC_SAVE_LEFT:
-			if(save_data(ghlvleft,fname_left))
+			if(save_data(ghlvleft,fname_left)){
 				show_ttip(hwnd,IDC_LVIEW_LEFT,&ghttip,"SAVED LEFT");
+				left_dirty=FALSE;
+				set_window_title(fname_left,left_dirty,fname_right,right_dirty);
+			}
 			break;
 		case IDC_SAVE_RIGHT:
-			if(save_data(ghlvright,fname_right))
+			if(save_data(ghlvright,fname_right)){
 				show_ttip(hwnd,IDC_LVIEW_RIGHT,&ghttip,"SAVED RIGHT");
+				right_dirty=FALSE;
+				set_window_title(fname_left,left_dirty,fname_right,right_dirty);
+			}
 			break;
 		case IDC_SHOW_SPLIT:
 			{
