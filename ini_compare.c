@@ -311,6 +311,69 @@ int show_ttip(HWND hwnd,int ctrl,HWND *httip,char *text)
 	}
 	return result;
 }
+struct EDIT_PARAMS{
+	char section[80];
+	char key[80];
+	char val[256];
+};
+
+LRESULT CALLBACK edit_dlg_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+	static struct EDIT_PARAMS *ep=0;
+	switch(msg){
+	case WM_INITDIALOG:
+		ep=lparam;
+		if(ep!=0){
+			SetDlgItemText(hwnd,IDC_SECTION,ep->section);
+			SetDlgItemText(hwnd,IDC_KEY,ep->key);
+			SetDlgItemText(hwnd,IDC_VALUE,ep->val);
+		}
+		SetFocus(GetDlgItem(hwnd,IDC_VALUE));
+		break;
+	case WM_COMMAND:
+		switch(LOWORD(wparam)){
+		case IDCANCEL:
+			EndDialog(hwnd,FALSE);
+			break;
+		case IDOK:
+			if(ep!=0)
+				GetDlgItemText(hwnd,IDC_VALUE,ep->val,sizeof(ep->val));
+			EndDialog(hwnd,ep!=0);
+			break;
+		}
+	}
+	return FALSE;
+}
+int edit_selection(HWND hlview,int idc)
+{
+	extern HINSTANCE ghinstance;
+	int result=FALSE;
+	int i,count;
+	count=ListView_GetItemCount(hlview);
+	for(i=0;i<count;i++){
+		int state;
+		state=ListView_GetItemState(hlview,i,LVIS_FOCUSED);
+		if(state&(LVIS_FOCUSED|LVIS_SELECTED)){
+			struct EDIT_PARAMS ep={0};
+			ListView_GetItemText(hlview,i,0,ep.section,sizeof(ep.section));
+			ListView_GetItemText(hlview,i,1,ep.key,sizeof(ep.key));
+			ListView_GetItemText(hlview,i,2,ep.val,sizeof(ep.val));
+			if(DialogBoxParam(ghinstance,MAKEINTRESOURCE(IDD_EDIT),hlview,edit_dlg_proc,&ep)){
+				ListView_SetItemText(hlview,i,2,ep.val);
+				result=TRUE;
+			}
+			break;
+		}
+	}
+	if(result){
+		if(idc=IDC_LVIEW_LEFT)
+			left_dirty=TRUE;
+		else
+			right_dirty=TRUE;
+		set_window_title(fname_left,left_dirty,fname_right,right_dirty);
+	}
+	return result;
+}
 LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	static int center=0,show_split=1;
@@ -363,7 +426,9 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 				switch(pnmh->idFrom){
 				case IDC_LVIEW_LEFT:
 				case IDC_LVIEW_RIGHT:
-					if(pnmh->code==LVN_KEYDOWN){
+					switch(pnmh->code){
+					case LVN_KEYDOWN:
+					{
 						LV_KEYDOWN *pnkd=lparam;
 						int key;
 						key=pnkd->wVKey;
@@ -376,7 +441,13 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 								idc=pnmh->idFrom==IDC_LVIEW_LEFT?IDC_OPEN_LEFT:IDC_OPEN_RIGHT;
 								SendMessage(hwnd,WM_COMMAND,MAKEWPARAM(idc,0),0);
 							}
+						}else{
+							if(key==VK_F2){
+								edit_selection(pnmh->hwndFrom,pnmh->idFrom);
+							}
 						}
+					}
+					break;
 					}
 				break;
 				}
@@ -429,6 +500,16 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 	case WM_APP:
 		populate_listview(ghlvleft,ghlvright,fname_left,fname_right,IsDlgButtonChecked(hwnd,IDC_CASE_SENSE));
 		return 0;
+		break;
+	case WM_APP+1:
+		if(wparam==WM_LBUTTONDBLCLK){
+			HWND hlview=lparam;
+			if(hlview!=0){
+				int idc;
+				idc=GetDlgCtrlID(hlview);
+				edit_selection(hlview,idc);
+			}
+		}
 		break;
 	case WM_CONTEXTMENU:
 		{

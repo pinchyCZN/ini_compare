@@ -302,6 +302,7 @@ int seek_next_diff(HWND hlview,int vk_dir)
 	}
 	return found>=0;
 }
+
 extern HWND ghlvleft,ghlvright;
 static WNDPROC wporiglistview=0;
 LRESULT APIENTRY sc_listview(HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
@@ -410,6 +411,9 @@ LRESULT APIENTRY sc_listview(HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
 			}
 			break;
 		}
+		break;
+	case WM_LBUTTONDBLCLK:
+		PostMessage(GetParent(hwnd),WM_APP+1,msg,hwnd);
 		break;
 	case WM_LBUTTONDOWN:
 		{
