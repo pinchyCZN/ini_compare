@@ -374,6 +374,30 @@ int edit_selection(HWND hlview,int idc)
 	}
 	return result;
 }
+int adjust_col_width(HWND hlview,int col,int dir)
+{
+	int width,result=TRUE;
+	if(col<0){
+		HWND hparent;
+		RECT rect={0};
+		int clamp,i;
+		hparent=GetParent(hlview);
+		GetWindowRect(hparent,&rect);
+		clamp=rect.right-rect.left;
+		clamp=(clamp/2)/3;
+		for(i=0;i<3;i++)
+			ListView_SetColumnWidth(hlview,i,clamp);
+	}else{
+		width=ListView_GetColumnWidth(hlview,col);
+		if(dir>=0)
+			width+=10;
+		else
+			width-=10;
+		if(width>=0)
+			ListView_SetColumnWidth(hlview,col,width);
+	}
+	return result;
+}
 LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	static int center=0,show_split=1;
@@ -434,12 +458,27 @@ LRESULT CALLBACK main_win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 						key=pnkd->wVKey;
 						if(0x8000&GetKeyState(VK_CONTROL)){
 							int idc;
-							if('S'==key){
+							switch(key){
+							case 'S':
 								idc=pnmh->idFrom==IDC_LVIEW_LEFT?IDC_SAVE_LEFT:IDC_SAVE_RIGHT;
 								SendMessage(hwnd,WM_COMMAND,MAKEWPARAM(idc,0),0);
-							}else if('O'==key){
+								break;
+							case 'O':
 								idc=pnmh->idFrom==IDC_LVIEW_LEFT?IDC_OPEN_LEFT:IDC_OPEN_RIGHT;
 								SendMessage(hwnd,WM_COMMAND,MAKEWPARAM(idc,0),0);
+								break;
+							case '0':
+							case '1':
+							case '2':
+							case '3':
+								{
+									int dir=1;
+									if(0x8000&GetKeyState(VK_SHIFT))
+										dir=-1;
+									adjust_col_width(pnmh->hwndFrom,key-'1',dir);
+
+								}
+								break;
 							}
 						}else{
 							if(key==VK_F2){

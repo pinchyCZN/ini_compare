@@ -329,6 +329,22 @@ int get_top_ypos(HWND hlview,int *ypos)
 	*ypos=rect.top-rtop.top;
 	return TRUE;
 }
+int clamp_widths(int widths[][3],int x,int y,HWND hparent)
+{
+	RECT rect={0};
+	int i,clamp;
+	GetWindowRect(hparent,&rect);
+	clamp=rect.right-rect.left;
+	clamp=(clamp/2)/3;
+	for(i=0;i<x;i++){
+		int j;
+		for(j=0;j<y;j++){
+			if(widths[i][j]>clamp)
+				widths[i][j]=clamp;
+		}
+	}
+	return 0;
+}
 int populate_listview(HWND hleft,HWND hright,char *fleft,char *fright,int case_sense)
 {
 	int result=FALSE;
@@ -429,6 +445,8 @@ int populate_listview(HWND hleft,HWND hright,char *fleft,char *fright,int case_s
 	ListView_Scroll(hleft,0,top_ypos);
 	ListView_Scroll(hright,0,top_ypos);
 	
+	clamp_widths(widths,2,3,GetParent(hleft));
+
 	for(i=0;i<sizeof(widths[0])/sizeof(widths[0][0]);i++){
 		ListView_SetColumnWidth(hleft,i,widths[0][i]+7);
 		ListView_SetColumnWidth(hright,i,widths[1][i]+7);
